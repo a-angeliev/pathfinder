@@ -9,11 +9,16 @@ function App() {
     const [algorithm, setAlgorithm] = useState("");
     const [startAlgorithm, setStartAlgorithm] = useState(false);
     const [resetWalls, setResetWalls] = useState(false);
-    console.log(resetWalls);
     return (
         <div className='App'>
-            <Header algorithm={algorithm} setAlgorithm={setAlgorithm} setStartAlgorithm={setStartAlgorithm} setResetWalls={setResetWalls} />
-            <Grid algorithm={algorithm} setAlgorithm={setAlgorithm} startAlgorithm={startAlgorithm} resetWalls={resetWalls} />
+            <Header
+                algorithm={algorithm}
+                setAlgorithm={setAlgorithm}
+                setStartAlgorithm={setStartAlgorithm}
+                startAlgorithm={startAlgorithm}
+                setResetWalls={setResetWalls}
+            />
+            <Grid algorithm={algorithm} setAlgorithm={setAlgorithm} setStartAlgorithm={setStartAlgorithm} startAlgorithm={startAlgorithm} resetWalls={resetWalls} />
         </div>
     );
 }

@@ -4,16 +4,20 @@ import dijkstra from "../algorithms/dijkstra";
 import bfs from "../algorithms/bfs";
 import "./Grid.css";
 
-const START_NODE_ROW = 10;
-const START_NODE_COL = 15;
-const END_NODE_ROW = 10;
-const END_NODE_COL = 35;
+let START_NODE_ROW = 10;
+let START_NODE_COL = 15;
+let END_NODE_ROW = 10;
+let END_NODE_COL = 35;
 
-const Grid = ({ algorithm, setAlgorithm, startAlgorithm, resetWalls }) => {
+const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, resetWalls }) => {
     const [grid, setGrid] = useState([]);
     const [mouseIsPressed, setMouseIsPressed] = useState(false);
-    //   const [algorithm, setAlgorithm] = useState('A*');
     const [isStopped, setIsStopped] = useState(false);
+
+    useEffect(() => {
+        const newGrid = resetGridPreservingWalls(grid);
+        setGrid(newGrid);
+    }, [algorithm]);
 
     useEffect(() => {
         const updateGridSize = () => {
@@ -21,27 +25,116 @@ const Grid = ({ algorithm, setAlgorithm, startAlgorithm, resetWalls }) => {
             const maxCols = Math.floor((window.innerWidth - 30) / 25);
             setGrid(createInitialGrid(maxRows, maxCols));
         };
-        console.log(resetWalls);
 
         updateGridSize();
         window.addEventListener("resize", updateGridSize);
         return () => window.removeEventListener("resize", updateGridSize);
     }, [resetWalls]);
 
+    const [isDraggingStart, setIsDraggingStart] = useState(false);
+    const [isDraggingEnd, setIsDraggingEnd] = useState(false);
+
     const handleMouseDown = (row, col) => {
-        const newGrid = getNewGridWithWallToggled(grid, row, col);
-        setGrid(newGrid);
+        if (row === START_NODE_ROW && col === START_NODE_COL) {
+            setIsDraggingStart(true);
+        } else if (row === END_NODE_ROW && col === END_NODE_COL) {
+            setIsDraggingEnd(true);
+        } else {
+            const newGrid = getNewGridWithWallToggled(grid, row, col);
+            setGrid(newGrid);
+        }
         setMouseIsPressed(true);
     };
 
     const handleMouseEnter = (row, col) => {
         if (!mouseIsPressed) return;
-        const newGrid = getNewGridWithWallToggled(grid, row, col);
+        if (isDraggingStart) {
+            const newGrid = getNewGridWithStartNode(grid, row, col);
+            setGrid(newGrid);
+        } else if (isDraggingEnd) {
+            const newGrid = getNewGridWithEndNode(grid, row, col);
+            setGrid(newGrid);
+        } else {
+            const newGrid = getNewGridWithWallToggled(grid, row, col);
+            setGrid(newGrid);
+        }
+
+        const newGrid = resetGridPreservingWalls(grid);
         setGrid(newGrid);
     };
 
     const handleMouseUp = () => {
         setMouseIsPressed(false);
+        setIsDraggingStart(false);
+        setIsDraggingEnd(false);
+    };
+
+    const getNewGridWithStartNode = (grid, row, col) => {
+        const newGrid = grid.slice();
+        const oldStartNode = newGrid[START_NODE_ROW][START_NODE_COL];
+        const newStartNode = {
+            ...oldStartNode,
+            isStart: false,
+        };
+        newGrid[START_NODE_ROW][START_NODE_COL] = newStartNode;
+
+        const node = newGrid[row][col];
+        const updatedNode = {
+            ...node,
+            isStart: true,
+        };
+        newGrid[row][col] = updatedNode;
+
+        START_NODE_ROW = row;
+        START_NODE_COL = col;
+
+        return newGrid;
+    };
+
+    const resetGridPreservingWalls = (grid) => {
+        const newGrid = grid.slice();
+        for (let row = 0; row < newGrid.length; row++) {
+            for (let col = 0; col < newGrid[row].length; col++) {
+                const node = newGrid[row][col];
+                const newNode = {
+                    ...node,
+                    isVisited: false,
+                    distance: Infinity,
+                    heuristic: Infinity,
+                    totalDistance: Infinity,
+                    previousNode: null,
+                    isStart: node.isStart,
+                    isEnd: node.isEnd,
+                    isWall: node.isWall,
+                };
+                newGrid[row][col] = newNode;
+                if (!node.isWall && !node.isStart && !node.isEnd) {
+                    document.getElementById(`node-${node.row}-${node.col}`).className = `grid-node`;
+                }
+            }
+        }
+        return newGrid;
+    };
+    const getNewGridWithEndNode = (grid, row, col) => {
+        const newGrid = grid.slice();
+        const oldEndNode = newGrid[END_NODE_ROW][END_NODE_COL];
+        const newEndNode = {
+            ...oldEndNode,
+            isEnd: false,
+        };
+        newGrid[END_NODE_ROW][END_NODE_COL] = newEndNode;
+
+        const node = newGrid[row][col];
+        const updatedNode = {
+            ...node,
+            isEnd: true,
+        };
+        newGrid[row][col] = updatedNode;
+
+        END_NODE_ROW = row;
+        END_NODE_COL = col;
+
+        return newGrid;
     };
 
     const visualizeAlgorithm = () => {
@@ -59,25 +152,8 @@ const Grid = ({ algorithm, setAlgorithm, startAlgorithm, resetWalls }) => {
         animateAlgorithm(visitedNodesInOrder, endNode);
     };
 
-    const resetWallsFunction = () => {
-        const newGrid = grid.slice();
-        for (let row = 0; row < newGrid.length; row++) {
-            for (let col = 0; col < newGrid[row].length; col++) {
-                const node = newGrid[row][col];
-                const newNode = {
-                    ...node,
-                    isWall: false,
-                };
-                newGrid[row][col] = newNode;
-                document.getElementById(`node-${node.row}-${node.col}`).className = "grid-node";
-            }
-        }
-        setGrid(newGrid);
-    };
-    // useEffect(() => {
-    //     if (resetWalls) resetWallsFunction();
-    // }, [resetWalls]);
     useEffect(() => {
+        console.log(startAlgorithm);
         if (startAlgorithm) visualizeAlgorithm();
     }, [startAlgorithm]);
 
@@ -86,7 +162,7 @@ const Grid = ({ algorithm, setAlgorithm, startAlgorithm, resetWalls }) => {
             if (isStopped) return;
             if (i === visitedNodesInOrder.length) {
                 setTimeout(() => {
-                    if (!isStopped) animateShortestPath(endNode);
+                    if (!isStopped) animateShortestPath(endNode, () => setStartAlgorithm(false));
                 }, 50 * i);
                 return;
             }
@@ -109,7 +185,7 @@ const Grid = ({ algorithm, setAlgorithm, startAlgorithm, resetWalls }) => {
         }
     };
 
-    const animateShortestPath = (endNode) => {
+    const animateShortestPath = (endNode, onComplete) => {
         let currentNode = endNode;
         const shortestPathNodes = [];
         while (currentNode !== null) {
@@ -122,6 +198,9 @@ const Grid = ({ algorithm, setAlgorithm, startAlgorithm, resetWalls }) => {
                 const node = shortestPathNodes[i];
                 if (!node.isStart && !node.isEnd) {
                     document.getElementById(`node-${node.row}-${node.col}`).className = "grid-node node-shortest-path";
+                }
+                if (i === shortestPathNodes.length - 1 && onComplete) {
+                    onComplete(); // Call the onComplete callback when the animation is finished
                 }
             }, 50 * i);
         }
@@ -186,27 +265,6 @@ const getNewGridWithWallToggled = (grid, row, col) => {
         isWall: !node.isWall,
     };
     newGrid[row][col] = newNode;
-    return newGrid;
-};
-
-const resetGridPreservingWalls = (grid) => {
-    const newGrid = grid.slice();
-    for (let row = 0; row < newGrid.length; row++) {
-        for (let col = 0; col < newGrid[row].length; col++) {
-            const node = newGrid[row][col];
-            const newNode = {
-                ...node,
-                isVisited: false,
-                distance: Infinity,
-                heuristic: Infinity,
-                totalDistance: Infinity,
-                previousNode: null,
-                isWall: node.isWall,
-            };
-            newGrid[row][col] = newNode;
-            document.getElementById(`node-${node.row}-${node.col}`).className = `grid-node ${node.isWall ? "node-wall" : ""}`;
-        }
-    }
     return newGrid;
 };
 

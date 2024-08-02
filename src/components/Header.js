@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import "./Header.css";
 
-const Header = ({ algorithm, setAlgorithm, setStartAlgorithm, setResetWalls }) => {
+const Header = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, setResetWalls }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     const toggleDropdown = () => {
@@ -14,7 +14,7 @@ const Header = ({ algorithm, setAlgorithm, setStartAlgorithm, setResetWalls }) =
         setIsOpen(false);
     };
 
-    const startAlgorithm = () => {
+    const start = () => {
         if (algorithm !== "") setStartAlgorithm(true);
     };
 
@@ -42,7 +42,7 @@ const Header = ({ algorithm, setAlgorithm, setStartAlgorithm, setResetWalls }) =
                 )}
             </div>
             <div>
-                <button className='visualize-button' onClick={startAlgorithm}>
+                <button disabled={startAlgorithm === true} className={`visualize-button ${startAlgorithm === true ? "in-progress" : null}`} onClick={start}>
                     {algorithm === "" ? "Pick up Algorithm!" : `Visualize ${algorithm}`}
                 </button>
             </div>
