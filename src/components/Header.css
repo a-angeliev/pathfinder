@@ -100,3 +100,9 @@
 .in-progress:hover {
   cursor: unset !important;
 }
+
+.selected {
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.3);
+  color: rgb(255, 208, 0)
+}

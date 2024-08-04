@@ -23,7 +23,9 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
         const updateGridSize = () => {
             const maxRows = Math.floor((window.innerHeight - 70) / 25); // Adjust 25 to control node size
             const maxCols = Math.floor((window.innerWidth - 30) / 25);
-            setGrid(createInitialGrid(maxRows, maxCols));
+            const newGrid = createInitialGrid(maxRows, maxCols);
+            const newGridWithoutProgress = resetGridPreservingWalls(newGrid);
+            setGrid(newGridWithoutProgress);
         };
 
         updateGridSize();
@@ -108,8 +110,11 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
                     isWall: node.isWall,
                 };
                 newGrid[row][col] = newNode;
-                if (!node.isWall && !node.isStart && !node.isEnd) {
-                    document.getElementById(`node-${node.row}-${node.col}`).className = `grid-node`;
+                const element = document.getElementById(`node-${node.row}-${node.col}`);
+                if (element) {
+                    if (!node.isWall && !node.isStart && !node.isEnd) {
+                        element.className = `grid-node`;
+                    }
                 }
             }
         }
