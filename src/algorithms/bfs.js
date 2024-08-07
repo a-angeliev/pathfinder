@@ -1,4 +1,6 @@
-export default function bfs(grid, startNode, endNode) {
+export default function bfs(grid, startNode, endNode, setTotalTime) {
+    const startTime = performance.now(); // Record start time
+
     const visitedNodesInOrder = [];
     const queue = [startNode];
     startNode.isVisited = true;
@@ -8,7 +10,12 @@ export default function bfs(grid, startNode, endNode) {
         if (currentNode.isWall) continue;
         visitedNodesInOrder.push(currentNode);
 
-        if (currentNode === endNode) return visitedNodesInOrder;
+        if (currentNode === endNode) {
+            const endTime = performance.now(); // Record end time
+            const totalTime = endTime - startTime; // Calculate total time in milliseconds
+            setTotalTime(totalTime); // Set the total time
+            return visitedNodesInOrder;
+        }
 
         const neighbors = getUnvisitedNeighbors(currentNode, grid);
         for (const neighbor of neighbors) {
@@ -18,6 +25,9 @@ export default function bfs(grid, startNode, endNode) {
         }
     }
 
+    const endTime = performance.now(); // Record end time if loop ends naturally
+    const totalTime = endTime - startTime; // Calculate total time in milliseconds
+    setTotalTime(totalTime); // Set the total time
     return visitedNodesInOrder; // Return all visited nodes if no path is found
 }
 

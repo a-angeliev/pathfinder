@@ -9,10 +9,11 @@ let START_NODE_COL = 15;
 let END_NODE_ROW = 10;
 let END_NODE_COL = 35;
 
-const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, resetWalls }) => {
+const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, resetWalls, speed }) => {
     const [grid, setGrid] = useState([]);
     const [mouseIsPressed, setMouseIsPressed] = useState(false);
     const [isStopped, setIsStopped] = useState(false);
+    const [totalTime, setTotalTime] = useState(0);
 
     useEffect(() => {
         const newGrid = resetGridPreservingWalls(grid);
@@ -37,6 +38,7 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
     const [isDraggingEnd, setIsDraggingEnd] = useState(false);
 
     const handleMouseDown = (row, col) => {
+        if (startAlgorithm) return;
         if (row === START_NODE_ROW && col === START_NODE_COL) {
             setIsDraggingStart(true);
         } else if (row === END_NODE_ROW && col === END_NODE_COL) {
@@ -71,26 +73,45 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
         setIsDraggingEnd(false);
     };
 
-    const getNewGridWithStartNode = (grid, row, col) => {
+    const updateGridWithNode = (grid, row, col, nodeType) => {
         const newGrid = grid.slice();
-        const oldStartNode = newGrid[START_NODE_ROW][START_NODE_COL];
-        const newStartNode = {
-            ...oldStartNode,
-            isStart: false,
-        };
-        newGrid[START_NODE_ROW][START_NODE_COL] = newStartNode;
+        const oldNodeRow = nodeType === "start" ? START_NODE_ROW : END_NODE_ROW;
+        const oldNodeCol = nodeType === "start" ? START_NODE_COL : END_NODE_COL;
 
-        const node = newGrid[row][col];
+        // Reset the old node
+        const oldNode = newGrid[oldNodeRow][oldNodeCol];
+        const newOldNode = {
+            ...oldNode,
+            [nodeType === "start" ? "isStart" : "isEnd"]: false,
+        };
+        newGrid[oldNodeRow][oldNodeCol] = newOldNode;
+
+        // Set the new node
+        const newNode = newGrid[row][col];
         const updatedNode = {
-            ...node,
-            isStart: true,
+            ...newNode,
+            [nodeType === "start" ? "isStart" : "isEnd"]: true,
         };
         newGrid[row][col] = updatedNode;
 
-        START_NODE_ROW = row;
-        START_NODE_COL = col;
+        // Update the global start or end node coordinates
+        if (nodeType === "start") {
+            START_NODE_ROW = row;
+            START_NODE_COL = col;
+        } else {
+            END_NODE_ROW = row;
+            END_NODE_COL = col;
+        }
 
         return newGrid;
+    };
+
+    const getNewGridWithStartNode = (grid, row, col) => {
+        return updateGridWithNode(grid, row, col, "start");
+    };
+
+    const getNewGridWithEndNode = (grid, row, col) => {
+        return updateGridWithNode(grid, row, col, "end");
     };
 
     const resetGridPreservingWalls = (grid) => {
@@ -120,27 +141,6 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
         }
         return newGrid;
     };
-    const getNewGridWithEndNode = (grid, row, col) => {
-        const newGrid = grid.slice();
-        const oldEndNode = newGrid[END_NODE_ROW][END_NODE_COL];
-        const newEndNode = {
-            ...oldEndNode,
-            isEnd: false,
-        };
-        newGrid[END_NODE_ROW][END_NODE_COL] = newEndNode;
-
-        const node = newGrid[row][col];
-        const updatedNode = {
-            ...node,
-            isEnd: true,
-        };
-        newGrid[row][col] = updatedNode;
-
-        END_NODE_ROW = row;
-        END_NODE_COL = col;
-
-        return newGrid;
-    };
 
     const visualizeAlgorithm = () => {
         setIsStopped(false);
@@ -148,18 +148,22 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
         const endNode = grid[END_NODE_ROW][END_NODE_COL];
         let visitedNodesInOrder;
         if (algorithm === "A*") {
-            visitedNodesInOrder = astar(grid, startNode, endNode);
+            visitedNodesInOrder = astar(grid, startNode, endNode, setTotalTime);
         } else if (algorithm === "Dijkstra") {
-            visitedNodesInOrder = dijkstra(grid, startNode, endNode);
+            visitedNodesInOrder = dijkstra(grid, startNode, endNode, setTotalTime);
         } else if (algorithm === "BFS") {
-            visitedNodesInOrder = bfs(grid, startNode, endNode);
+            visitedNodesInOrder = bfs(grid, startNode, endNode, setTotalTime);
         }
         animateAlgorithm(visitedNodesInOrder, endNode);
     };
 
     useEffect(() => {
         console.log(startAlgorithm);
-        if (startAlgorithm) visualizeAlgorithm();
+        if (startAlgorithm) {
+            const newGrid = resetGridPreservingWalls(grid);
+            setGrid(newGrid);
+            visualizeAlgorithm();
+        }
     }, [startAlgorithm]);
 
     const animateAlgorithm = (visitedNodesInOrder, endNode) => {
@@ -168,7 +172,7 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
             if (i === visitedNodesInOrder.length) {
                 setTimeout(() => {
                     if (!isStopped) animateShortestPath(endNode, () => setStartAlgorithm(false));
-                }, 50 * i);
+                }, speed * i);
                 return;
             }
             setTimeout(() => {
@@ -186,7 +190,7 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
                 if (!node.isStart && !node.isEnd) {
                     document.getElementById(`node-${node.row}-${node.col}`).classList.add("node-current");
                 }
-            }, 50 * i);
+            }, speed * i);
         }
     };
 
@@ -213,6 +217,9 @@ const Grid = ({ algorithm, setAlgorithm, setStartAlgorithm, startAlgorithm, rese
 
     return (
         <>
+            <div className='info-window'>
+                <p>Total actual time: {totalTime.toFixed(2)}ms</p>
+            </div>
             <div className='grid'>
                 {grid.map((row, rowIdx) => (
                     <div key={rowIdx} className='grid-row'>
@@ -263,6 +270,11 @@ const createNode = (col, row) => {
 };
 
 const getNewGridWithWallToggled = (grid, row, col) => {
+    // Prevent toggling walls on start or end nodes
+    if ((row === START_NODE_ROW && col === START_NODE_COL) || (row === END_NODE_ROW && col === END_NODE_COL)) {
+        return grid;
+    }
+
     const newGrid = grid.slice();
     const node = newGrid[row][col];
     const newNode = {

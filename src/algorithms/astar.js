@@ -38,7 +38,9 @@ function sortNodesByDistance(unvisitedNodes) {
     unvisitedNodes.sort((nodeA, nodeB) => nodeA.totalDistance - nodeB.totalDistance);
 }
 
-function astar(grid, startNode, endNode) {
+function astar(grid, startNode, endNode, setTotalTime) {
+    const startTime = performance.now(); // Record start time
+
     const visitedNodesInOrder = [];
     startNode.distance = 0;
     startNode.heuristic = manhattanDistance(startNode, endNode);
@@ -50,15 +52,29 @@ function astar(grid, startNode, endNode) {
         const closestNode = unvisitedNodes.shift();
 
         if (closestNode.isWall) continue;
-        if (closestNode.totalDistance === Infinity) return visitedNodesInOrder;
+        if (closestNode.totalDistance === Infinity) {
+            const endTime = performance.now(); // Record end time
+            setTotalTime(endTime - startTime);
+            console.log(endTime - startTime); // Calculate and set total time
+            return visitedNodesInOrder;
+        }
 
         closestNode.isVisited = true;
         visitedNodesInOrder.push(closestNode);
 
-        if (closestNode === endNode) return visitedNodesInOrder;
+        if (closestNode === endNode) {
+            const endTime = performance.now(); // Record end time
+            setTotalTime(endTime - startTime);
+            console.log(endTime - startTime); // Calculate and set total time
+            return visitedNodesInOrder;
+        }
 
         updateUnvisitedNeighbors(closestNode, grid, endNode);
     }
+    const endTime = performance.now(); // Record end time if loop ends naturally
+    setTotalTime(endTime - startTime);
+    console.log(endTime - startTime); // Calculate and set total time
+    return visitedNodesInOrder;
 }
 
 export default astar;

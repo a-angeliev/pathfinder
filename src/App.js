@@ -9,6 +9,8 @@ function App() {
     const [algorithm, setAlgorithm] = useState("");
     const [startAlgorithm, setStartAlgorithm] = useState(false);
     const [resetWalls, setResetWalls] = useState(false);
+    const [speed, setSpeed] = useState(50);
+
     return (
         <div className='App'>
             <Header
@@ -17,8 +19,17 @@ function App() {
                 setStartAlgorithm={setStartAlgorithm}
                 startAlgorithm={startAlgorithm}
                 setResetWalls={setResetWalls}
+                speed={speed}
+                setSpeed={setSpeed}
             />
-            <Grid algorithm={algorithm} setAlgorithm={setAlgorithm} setStartAlgorithm={setStartAlgorithm} startAlgorithm={startAlgorithm} resetWalls={resetWalls} />
+            <Grid
+                algorithm={algorithm}
+                setAlgorithm={setAlgorithm}
+                setStartAlgorithm={setStartAlgorithm}
+                startAlgorithm={startAlgorithm}
+                resetWalls={resetWalls}
+                speed={speed}
+            />
         </div>
     );
 }
